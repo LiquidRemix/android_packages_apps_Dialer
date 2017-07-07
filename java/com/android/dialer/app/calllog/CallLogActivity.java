@@ -39,6 +39,7 @@ import com.android.dialer.app.calllog.ClearCallLogDialog.Listener;
 import com.android.dialer.calldetails.CallDetailsActivity;
 import com.android.dialer.callstats.CallStatsFragment;
 import com.android.dialer.callstats.DoubleDatePickerDialog;
+import com.android.dialer.compat.AppCompatConstants;
 import com.android.dialer.database.CallLogQueryHandler;
 import com.android.dialer.enrichedcall.EnrichedCallComponent;
 import com.android.dialer.logging.Logger;
@@ -92,7 +93,8 @@ public class CallLogActivity extends TransactionSafeActivity implements
     final Intent intent = getIntent();
     if (intent != null) {
       final int callType = intent.getIntExtra(CallLog.Calls.EXTRA_CALL_TYPE_FILTER, -1);
-      if (callType == CallLog.Calls.MISSED_TYPE) {
+      if (callType == CallLog.Calls.MISSED_TYPE ||
+          callType == AppCompatConstants.MISSED_IMS_TYPE) {
         startingTab = TAB_INDEX_MISSED;
       }
     }
