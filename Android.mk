@@ -299,6 +299,7 @@ LOCAL_STATIC_JAVA_LIBRARIES := \
 	libphonenumber \
 	okhttp \
 	volley \
+        ims-ext-common
 
 LOCAL_STATIC_ANDROID_LIBRARIES := \
 	android-support-design \
@@ -311,6 +312,8 @@ LOCAL_STATIC_ANDROID_LIBRARIES := \
 
 LOCAL_JAVA_LIBRARIES := \
 	dialer-auto-value \
+        telephony-ext \
+        ims-common \
 	org.apache.http.legacy \
 
 # Libraries needed by the compiler (JACK) to generate code.
