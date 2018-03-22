@@ -36,9 +36,14 @@ import com.android.dialer.app.R;
 import com.android.dialer.callrecord.impl.CallRecorderService;
 import com.android.dialer.compat.SdkVersionOverride;
 import com.android.dialer.util.SettingsUtil;
+import android.app.NotificationManager;
+import android.support.v4.app.ActivityCompat;
+import android.annotation.TargetApi;
+import android.content.Intent;
+
 
 public class SoundSettingsFragment extends PreferenceFragment
-    implements Preference.OnPreferenceChangeListener {
+    implements Preference.OnPreferenceChangeListener, ActivityCompat.OnRequestPermissionsResultCallback {
 
   private static final int NO_DTMF_TONE = 0;
   private static final int PLAY_DTMF_TONE = 1;
@@ -71,6 +76,7 @@ public class SoundSettingsFragment extends PreferenceFragment
       };
   private SwitchPreference mVibrateWhenRinging;
   private SwitchPreference mPlayDtmfTone;
+  private SwitchPreference mDNDcallMode;
   private ListPreference mDtmfToneLength;
 
   @Override
@@ -91,6 +97,8 @@ public class SoundSettingsFragment extends PreferenceFragment
         (SwitchPreference) findPreference(context.getString(R.string.vibrate_on_preference_key));
     mPlayDtmfTone =
         (SwitchPreference) findPreference(context.getString(R.string.play_dtmf_preference_key));
+    mDNDcallMode =
+        (SwitchPreference) findPreference("incall_enable_dnd");
     mDtmfToneLength =
         (ListPreference)
             findPreference(context.getString(R.string.dtmf_tone_length_preference_key));
@@ -101,7 +109,6 @@ public class SoundSettingsFragment extends PreferenceFragment
       getPreferenceScreen().removePreference(mVibrateWhenRinging);
       mVibrateWhenRinging = null;
     }
-
     mPlayDtmfTone.setOnPreferenceChangeListener(this);
     mPlayDtmfTone.setChecked(shouldPlayDtmfTone());
 
@@ -136,6 +143,8 @@ public class SoundSettingsFragment extends PreferenceFragment
       getActivity().onBackPressed();
       return;
     }
+
+    setupDNDSwitch();
 
     if (mVibrateWhenRinging != null) {
       mVibrateWhenRinging.setChecked(shouldVibrateWhenRinging());
@@ -235,6 +244,51 @@ public class SoundSettingsFragment extends PreferenceFragment
     Vibrator vibrator = (Vibrator) getActivity().getSystemService(Context.VIBRATOR_SERVICE);
     return vibrator != null && vibrator.hasVibrator();
   }
+
+ private void updateDNDSwitch(boolean notificationPolicyAccessGranted) {
+        mDNDcallMode.setChecked(notificationPolicyAccessGranted);
+	updateDNDSummary(notificationPolicyAccessGranted);
+    }
+
+ private void setupDNDSwitch() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !isNotificationPolicyAccessGranted()) {
+            updateDNDSwitch(false);
+            mDNDcallMode.setOnPreferenceClickListener(
+                    new Preference.OnPreferenceClickListener() {
+                        @Override
+                        public boolean onPreferenceClick(Preference preference) {
+                            requestNotificationPolicyAccess();
+                            return false;
+                        }
+                    }
+            );
+	} else {
+            updateDNDSummary(true);
+        }
+ }
+
+ private void updateDNDSummary(boolean notificationPolicyAccessGranted) {
+        if (notificationPolicyAccessGranted) {
+            mDNDcallMode.setSummary("");
+        } else {
+            mDNDcallMode.setSummary(getActivity().getResources().getString(R.string.incall_enable_dnd_summary));
+        }
+ }
+
+ private void requestNotificationPolicyAccess() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !isNotificationPolicyAccessGranted()) {
+            Intent intent = new Intent(android.provider.Settings.
+                    ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS);
+            startActivity(intent);
+        }
+    }
+
+    @TargetApi(Build.VERSION_CODES.M)
+    private boolean isNotificationPolicyAccessGranted()  {
+        NotificationManager notificationManager = (NotificationManager)
+                getActivity().getSystemService(Context.NOTIFICATION_SERVICE);
+        return notificationManager.isNotificationPolicyAccessGranted();
+ }
 
   private boolean shouldHideCarrierSettings() {
     CarrierConfigManager configManager =
